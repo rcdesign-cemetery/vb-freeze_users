@@ -82,7 +82,7 @@ if (!empty($source_groups) AND
 }]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
-			<title>Restore group</title>
+			<title>Restore Account</title>
 			<hookname>login_process</hookname>
 			<phpcode><![CDATA[if ($vbulletin->userinfo['userid'] > 0
     AND $vbulletin->userinfo['usergroupid'] == $vbulletin->options['fu_frozen_group']
@@ -96,7 +96,7 @@ if (!empty($source_groups) AND
 }]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
-			<title><![CDATA[Add "Freeze account" button into usercp panel]]></title>
+			<title>Add freeze link to UCP menu</title>
 			<hookname>parse_templates</hookname>
 			<phpcode><![CDATA[if ($vbulletin->templatecache['USERCP_SHELL'])
 {
@@ -116,7 +116,7 @@ if (!empty($source_groups) AND
 }]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
-			<title>Add self freeze button to usercp</title>
+			<title>Freeze UI / Controller</title>
 			<hookname>profile_start</hookname>
 			<phpcode><![CDATA[if ($_REQUEST['do'] == 'freezeform')
 {
@@ -145,12 +145,12 @@ if ($_REQUEST['do'] == 'freezeacc')
 	</plugins>
 	<phrases>
 		<phrasetype name="Error Messages" fieldname="error">
-			<phrase name="fu_freeze_failed" date="1299352799" username="Vitaly" version=""><![CDATA[Something wrong. Please, contact administrator.]]></phrase>
+			<phrase name="fu_freeze_failed" date="1299712019" username="Vitaly" version=""><![CDATA[Something wrong. Please, contact administrator.]]></phrase>
 		</phrasetype>
 		<phrasetype name="User Tools (global)" fieldname="user">
-			<phrase name="fu_ucp_confirm" date="1299352929" username="Vitaly" version=""><![CDATA[Are you sure?]]></phrase>
-			<phrase name="fu_ucp_link" date="1299352853" username="Vitaly" version=""><![CDATA[Freeze Account]]></phrase>
-			<phrase name="fu_ucp_note" date="1299353219" username="Vitaly" version=""><![CDATA[If you freeze your account, it will not be shown in users list. You also will not receive any email notifications from our forum. To unfreeze back - just login again.]]></phrase>
+			<phrase name="fu_ucp_confirm" date="1299711725" username="Vitaly" version=""><![CDATA[Are you sure?]]></phrase>
+			<phrase name="fu_ucp_link" date="1299711751" username="Vitaly" version=""><![CDATA[Freeze Account]]></phrase>
+			<phrase name="fu_ucp_note" date="1299711930" username="Vitaly" version=""><![CDATA[If you freeze your account, it will not be shown in users list. You also will not receive any email notifications from our forum. To unfreeze back - just login again.]]></phrase>
 		</phrasetype>
 		<phrasetype name="vBulletin Settings" fieldname="vbsettings">
 			<phrase name="setting_fu_frozen_group_desc" date="1299350786" username="Vitaly" version="0.1"><![CDATA[Move frozen users to this groups. Don't forget to remove all permissions.]]></phrase>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<language name="Russian (RU)" vbversion="4.0.8" product="freeze_users" type="custom">
+	<settings>
+		<options><![CDATA[1]]></options>
+		<languagecode><![CDATA[ru]]></languagecode>
+		<charset><![CDATA[UTF-8]]></charset>
+		<imagesoverride />
+		<dateoverride><![CDATA[d.m.Y]]></dateoverride>
+		<timeoverride><![CDATA[H:i]]></timeoverride>
+		<registereddateoverride><![CDATA[d.m.Y]]></registereddateoverride>
+		<calformat1override><![CDATA[j F Y]]></calformat1override>
+		<calformat2override><![CDATA[j F]]></calformat2override>
+		<logdateoverride><![CDATA[H:i, d.m.Y]]></logdateoverride>
+		<locale />
+		<decimalsep><![CDATA[.]]></decimalsep>
+		<thousandsep><![CDATA[,]]></thousandsep>
+	</settings>
+	<phrasetype name="Error Messages" fieldname="error">
+		<phrase name="fu_freeze_failed" date="1299712019" username="Vitaly"><![CDATA[Что-то навернулось. Пожалуйста, свяжитесь с администратором.]]></phrase>
+	</phrasetype>
+	<phrasetype name="User Tools (global)" fieldname="user">
+		<phrase name="fu_ucp_confirm" date="1299711725" username="Vitaly"><![CDATA[Вы уверены?]]></phrase>
+		<phrase name="fu_ucp_link" date="1299711751" username="Vitaly"><![CDATA[Заморозить аккаунт]]></phrase>
+		<phrase name="fu_ucp_note" date="1299711930" username="Vitaly"><![CDATA[Если вы заморозите аккаунт, вы не будете получать уведомления на email. Также ваш аккаунт не будет показываться в списке пользоватлей. Для разморозки достаточно залогиниться на форум.]]></phrase>
+	</phrasetype>
+</language>
