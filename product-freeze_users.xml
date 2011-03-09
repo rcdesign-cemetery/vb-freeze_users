@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<product productid="freeze_users" active="1">
+	<title>Freeze Inactive Users</title>
+	<description><![CDATA[Move inactive users to separate group & disable their subscribtions]]></description>
+	<version>0.1</version>
+	<url />
+	<versioncheckurl />
+	<apm_releasedate>0</apm_releasedate>
+	<apm_author />
+	<apm_relatedurl />
+	<apm_extrainfo />
+	<apm_extraedit />
+	<dependencies>
+	</dependencies>
+	<codes>
+	</codes>
+	<templates>
+		<template name="uc_freeze_form" templatetype="template" date="1299328504" username="varnak" version="0.1"><![CDATA[<form enctype="multipart/form-data" action="profile.php?do=freezeacc" method="post" class="block">
+	<h2 class="blockhead">{vb:rawphrase fu_ucp_link}</h2>
+	<div class="blockbody formcontrols settings_form_border">
+		<div class="section">
+			<div class="blockrow">
+				<div>
+                    {vb:rawphrase fu_ucp_note}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="blockfoot actionbuttons settings_form_border">
+		<div class="group">
+			<input type="submit" class="button" value="{vb:rawphrase okay}" onClick="return log_out('{vb:rawphrase fu_ucp_confirm}')" accesskey="s" />
+			<input type="hidden" name="s" value="{vb:raw session.sessionhash}" />
+			<input type="hidden" name="securitytoken" value="{vb:raw bbuserinfo.securitytoken}" />
+			<input type="hidden" name="do" value="freezeacc" />
+		</div>
+	</div>
+</form>]]></template>
+	</templates>
+	<stylevardfns>
+	</stylevardfns>
+	<stylevars>
+	</stylevars>
+	<plugins>
+		<plugin active="1" executionorder="5">
+			<title>Cache templates</title>
+			<hookname>cache_templates</hookname>
+			<phpcode><![CDATA[if (THIS_SCRIPT == 'profile' AND $_REQUEST['do'] == 'freezeform')
+{
+    $cache[] = 'uc_freeze_form';
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Freeze accounts</title>
+			<hookname>cron_script_cleanup_daily</hookname>
+			<phpcode><![CDATA[$source_groups = unserialize($vbulletin->options['fu_source_groups']);
+require_once(DIR . '/includes/functions_freeze_users.php');
+if (!empty($source_groups) AND 
+    0 < $vbulletin->options['fu_frozen_group'] AND 
+    0 < $vbulletin->options['fu_inactivity_period'])
+{
+    $find_user_sql = 'SELECT 
+                            `userid`
+                        FROM 
+                            ' . TABLE_PREFIX . 'user 
+                        WHERE 
+                            `usergroupid` IN (' . implode(', ', $source_groups) . ') AND
+                            `lastvisit` < ' . (TIMENOW - 60*60*24*$vbulletin->options['fu_inactivity_period']);
+
+    fu_disable_notifications($find_user_sql);
+
+    $res = $vbulletin->db->query($find_user_sql);
+    while ($user = $vbulletin->db->fetch_array($res))
+    {
+        $info = fetch_userinfo($user['userid']);
+        $user_dm =& datamanager_init('User', $vbulletin, ERRTYPE_CP);
+        $user_dm->set_existing($info);
+        $user_dm->set('usergroupid', (int)$vbulletin->options['fu_frozen_group']);
+        $user_dm->save(); 
+    }
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Restore group</title>
+			<hookname>login_process</hookname>
+			<phpcode><![CDATA[if ($vbulletin->userinfo['userid'] > 0
+    AND $vbulletin->userinfo['usergroupid'] == $vbulletin->options['fu_frozen_group']
+    AND 0 < $vbulletin->options['fu_restore_group'])
+{
+    $user_dm =& datamanager_init('User', $vbulletin, ERRTYPE_CP);
+    $user_dm->set_existing($vbulletin->userinfo);
+    $user_dm->set('usergroupid', (int)$vbulletin->options['fu_restore_group']);
+    $user_dm->save();
+    $vbulletin->userinfo['usergroupid'] = $vbulletin->options['fu_restore_group'];
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[Add "Freeze account" button into usercp panel]]></title>
+			<hookname>parse_templates</hookname>
+			<phpcode><![CDATA[if ($vbulletin->templatecache['USERCP_SHELL'])
+{
+    require_once(DIR . '/includes/functions_freeze_users.php');
+    if (fu_user_can_be_frozen($vbulletin->userinfo['userid']))
+    {
+        $search = 'if ($show[\'paidsubscriptions\']) {
+					$final_rendered .= \'
+                                                        <li class="\' . $navclass[\'paid_subscriptions\'] . \'"><a href="payments.php\' . $session[\'sessionurl_q\'] . \'">\' . vB_Template_Runtime::parsePhrase("paid_subscriptions") . \'</a></li>
+                                                \';
+				} else {
+			$final_rendered .= \'\';
+		}';
+        $replace = $search . '$final_rendered .=\' <li class="\' . $navclass[\'freezeform\'] . \'"><a href="profile.php?\' . $session[\'sessionurl_q\'] . \'do=freezeform">\' . vB_Template_Runtime::parsePhrase("fu_ucp_link") . \'</a></li>\';';
+        $vbulletin->templatecache['USERCP_SHELL'] = str_replace($search, $replace, $vbulletin->templatecache['USERCP_SHELL']);
+    }
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Add self freeze button to usercp</title>
+			<hookname>profile_start</hookname>
+			<phpcode><![CDATA[if ($_REQUEST['do'] == 'freezeform')
+{
+	// draw cp nav bar
+	construct_usercp_nav('freezeacc');
+    $page_templater = vB_Template::create('uc_freeze_form');
+}
+
+if ($_REQUEST['do'] == 'freezeacc')
+{
+    require_once(DIR . '/includes/functions_freeze_users.php');
+    if (fu_freeze_user($vbulletin->userinfo))
+    {
+        $url = 'login.php?' . $vbulletin->session->vars['sessionurl'] . "do=logout&logouthash=" . $vbulletin->userinfo['logouthash'];
+        exec_header_redirect($url);
+    }
+    eval(standard_error(fetch_error('fu_freeze_failed')));
+
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Update nav bar</title>
+			<hookname>usercp_nav_start</hookname>
+			<phpcode><![CDATA[$cells[] = 'freezeacc';]]></phpcode>
+		</plugin>
+	</plugins>
+	<phrases>
+		<phrasetype name="Error Messages" fieldname="error">
+			<phrase name="fu_freeze_failed" date="1299352799" username="Vitaly" version=""><![CDATA[Something wrong. Please, contact administrator.]]></phrase>
+		</phrasetype>
+		<phrasetype name="User Tools (global)" fieldname="user">
+			<phrase name="fu_ucp_confirm" date="1299352929" username="Vitaly" version=""><![CDATA[Are you sure?]]></phrase>
+			<phrase name="fu_ucp_link" date="1299352853" username="Vitaly" version=""><![CDATA[Freeze Account]]></phrase>
+			<phrase name="fu_ucp_note" date="1299353219" username="Vitaly" version=""><![CDATA[If you freeze your account, it will not be shown in users list. You also will not receive any email notifications from our forum. To unfreeze back - just login again.]]></phrase>
+		</phrasetype>
+		<phrasetype name="vBulletin Settings" fieldname="vbsettings">
+			<phrase name="setting_fu_frozen_group_desc" date="1299350786" username="Vitaly" version="0.1"><![CDATA[Move frozen users to this groups. Don't forget to remove all permissions.]]></phrase>
+			<phrase name="setting_fu_frozen_group_title" date="1299350786" username="Vitaly" version="0.1"><![CDATA[Freeze into]]></phrase>
+			<phrase name="setting_fu_inactivity_period_desc" date="1299350985" username="Vitaly" version="0.1"><![CDATA[Users will be frozen after this time]]></phrase>
+			<phrase name="setting_fu_inactivity_period_title" date="1299350985" username="Vitaly" version="0.1"><![CDATA[Inactivity time (days)]]></phrase>
+			<phrase name="setting_fu_restore_group_desc" date="1299350891" username="Vitaly" version="0.1"><![CDATA[Unfrozen users (logged in) will be moved here]]></phrase>
+			<phrase name="setting_fu_restore_group_title" date="1299350891" username="Vitaly" version="0.1"><![CDATA[Restore into]]></phrase>
+			<phrase name="setting_fu_source_groups_desc" date="1299350750" username="Vitaly" version="0.1"><![CDATA[Members of this groups can be "frozen" (moved to group with no permissions & no subscrubtions)]]></phrase>
+			<phrase name="setting_fu_source_groups_title" date="1299350750" username="Vitaly" version="0.1"><![CDATA[Checked groups]]></phrase>
+			<phrase name="settinggroup_freeze_users" date="1299352082" username="Vitaly" version=""><![CDATA[Freeze users]]></phrase>
+		</phrasetype>
+	</phrases>
+	<options>
+		<settinggroup name="freeze_users" displayorder="65535">
+			<setting varname="fu_source_groups" displayorder="10">
+				<datatype>free</datatype>
+				<optioncode>usergroup:5</optioncode>
+			</setting>
+			<setting varname="fu_frozen_group" displayorder="20">
+				<datatype>free</datatype>
+				<optioncode>usergroupextra
+0|-</optioncode>
+				<defaultvalue>0</defaultvalue>
+			</setting>
+			<setting varname="fu_restore_group" displayorder="180">
+				<datatype>free</datatype>
+				<optioncode>usergroupextra
+0|-</optioncode>
+				<defaultvalue>0</defaultvalue>
+			</setting>
+			<setting varname="fu_inactivity_period" displayorder="200">
+				<datatype>integer</datatype>
+				<defaultvalue>180</defaultvalue>
+			</setting>
+		</settinggroup>
+	</options>
+	<helptopics>
+	</helptopics>
+	<cronentries>
+	</cronentries>
+	<faqentries>
+	</faqentries>
+	<templateedits>
+	</templateedits>
+</product>
