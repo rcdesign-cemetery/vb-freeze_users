@@ -16,6 +16,11 @@
 	<codes>
 	</codes>
 	<templates>
+		<template name="uc_freeze_button" templatetype="template" date="1299833483" username="varnak" version="0.1"><![CDATA[<div class="blockrow">
+    <a href="profile.php?{vb:raw session.sessionurl}do=freezeform">{vb:rawphrase fu_ucp_link}</a>
+</div>
+
+]]></template>
 		<template name="uc_freeze_form" templatetype="template" date="1299328504" username="varnak" version="0.1"><![CDATA[<form enctype="multipart/form-data" action="profile.php?do=freezeacc" method="post" class="block">
 	<h2 class="blockhead">{vb:rawphrase fu_ucp_link}</h2>
 	<div class="blockbody formcontrols settings_form_border">
@@ -49,6 +54,10 @@
 			<phpcode><![CDATA[if (THIS_SCRIPT == 'profile' AND $_REQUEST['do'] == 'freezeform')
 {
     $cache[] = 'uc_freeze_form';
+}
+if (THIS_SCRIPT == 'profile' AND $_REQUEST['do'] == 'editoptions')
+{
+    $cache[] = 'uc_freeze_button';
 }]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
@@ -73,7 +82,7 @@ if (!empty($source_groups) AND
     $res = $vbulletin->db->query($find_user_sql);
     while ($user = $vbulletin->db->fetch_array($res))
     {
-        $info = fetch_userinfo($user['userid']);
+        $info = fetch_userinfo($user['userid'], 0, 0, 1);
         $user_dm =& datamanager_init('User', $vbulletin, ERRTYPE_CP);
         $user_dm->set_existing($info);
         $user_dm->set('usergroupid', (int)$vbulletin->options['fu_frozen_group']);
@@ -95,24 +104,15 @@ if (!empty($source_groups) AND
     $vbulletin->userinfo['usergroupid'] = $vbulletin->options['fu_restore_group'];
 }]]></phpcode>
 		</plugin>
-		<plugin active="1" executionorder="5">
-			<title>Add freeze link to UCP menu</title>
-			<hookname>parse_templates</hookname>
-			<phpcode><![CDATA[if ($vbulletin->templatecache['USERCP_SHELL'])
+		<plugin active="1" executionorder="90">
+			<title><![CDATA[Add "Freeze form" button to general setting form]]></title>
+			<hookname>profile_editoptions_start</hookname>
+			<phpcode><![CDATA[require_once(DIR . '/includes/functions_freeze_users.php');
+if (fu_user_can_be_frozen($vbulletin->userinfo))
 {
-    require_once(DIR . '/includes/functions_freeze_users.php');
-    if (fu_user_can_be_frozen($vbulletin->userinfo['userid']))
-    {
-        $search = 'if ($show[\'paidsubscriptions\']) {
-					$final_rendered .= \'
-                                                        <li class="\' . $navclass[\'paid_subscriptions\'] . \'"><a href="payments.php\' . $session[\'sessionurl_q\'] . \'">\' . vB_Template_Runtime::parsePhrase("paid_subscriptions") . \'</a></li>
-                                                \';
-				} else {
-			$final_rendered .= \'\';
-		}';
-        $replace = $search . '$final_rendered .=\' <li class="\' . $navclass[\'freezeform\'] . \'"><a href="profile.php?\' . $session[\'sessionurl_q\'] . \'do=freezeform">\' . vB_Template_Runtime::parsePhrase("fu_ucp_link") . \'</a></li>\';';
-        $vbulletin->templatecache['USERCP_SHELL'] = str_replace($search, $replace, $vbulletin->templatecache['USERCP_SHELL']);
-    }
+    $tmpl = vB_Template::create('uc_freeze_button');
+    $template_hook['usercp_options_other'] .= $tmpl->render();
+    unset($tmpl);
 }]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
@@ -136,11 +136,6 @@ if ($_REQUEST['do'] == 'freezeacc')
     eval(standard_error(fetch_error('fu_freeze_failed')));
 
 }]]></phpcode>
-		</plugin>
-		<plugin active="1" executionorder="5">
-			<title>Update nav bar</title>
-			<hookname>usercp_nav_start</hookname>
-			<phpcode><![CDATA[$cells[] = 'freezeacc';]]></phpcode>
 		</plugin>
 	</plugins>
 	<phrases>

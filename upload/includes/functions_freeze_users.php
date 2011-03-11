@@ -8,9 +8,8 @@
 function fu_user_can_be_frozen($user_info)
 {
     global $vbulletin;
-    
-    if (is_member_of($user_info, unserialize($vbulletin->options['fu_source_groups']) AND 
-        0 < $vbulletin->options['fu_frozen_group']))
+    if (is_member_of($user_info, unserialize($vbulletin->options['fu_source_groups'])) AND 
+        0 < $vbulletin->options['fu_frozen_group'])
     {
         return true;
     }
